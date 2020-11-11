@@ -1,0 +1,610 @@
+<html>
+<head>
+    <style>
+        #collapseTrigger{
+            color:#fff;
+            display: block;
+            text-decoration: none;
+        }
+        #submitButton{
+            white-space: normal;
+        }
+        #instructionBody table{
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        #instructionBody table caption{
+            text-align: left;
+            padding: 0 0 5px 0;
+        }
+        #choice{
+            display: block;
+            margin-top: 10px;
+        }
+        .content{
+            margin-bottom: 15px;
+        }
+        .question{
+            margin-left: 15px;
+            padding-left: 10px;
+            border-left: double;
+        }
+        .radio:first-of-type{
+            margin-top: -5px;
+        }
+
+        .ann {
+            font-size: 15px;
+        }
+
+        .disp {
+            font-size: 20px;
+        }
+
+        .ann > span.token {
+            cursor: pointer;
+        }
+
+        .ann > span.token:hover {
+            text-decoration: underline;
+        }
+
+        .ann > strong.annotation:hover {
+            text-decoration: line-through;
+        }
+
+        .annotation {
+            font-weight: normal;
+            background-color: #EAD379;
+        }
+
+        .btn-ann {
+            font-size: 10px;
+        }
+
+        input[disabled] {
+            color: #000
+        }
+
+        #key-name {
+            background-color: #EAD379;
+        }
+
+
+    </style>
+</head>
+
+<meta content="width=device-width,initial-scale=1" name="viewport" />
+<section class="container" id="Relevancy">
+    <div class="row">
+        <div class="col-xs-12 col-md-12">
+            <div class="panel panel-primary"><a class="panel-heading" href="javascript:void(0);" id="collapseTrigger"><strong>İşaretleme Talimatları</strong> <span class="collapse-text">(Detaylı bilgi için tıklayınız.)</span> </a>
+                <div class="panel-body" id="instructionBody"><strong>Çevirinin doğruluğunu kontrol ediniz. Aşağıdaki açılır kısımda orijinal metin, altta ise çeviri metin yer almaktadır. Eğer çeviri yanlış ise alttaki "Hatalı Çeviri!!!" butonuna basınız.  </strong>
+                    <br/><strong>Doğru çeviriler için öğe işaretlemesi yapılması gerekmektedir. Aşağıda verilen öğeler için metindeki kelimeleri işaretleyiniz. İşaretleyeceğiniz öğeyi sağdan seçtikten sonra gerekli kelimeleri seçebilirsiniz. Yanlış tıkladığınıız kelimelere tekrar tıklayarak seçimi iptal edebilirsiniz. </strong>
+                    <br/><strong>İşaretledikten sonra öğeler için ayrılan kutucuklardan son kontrolünüzü yapıp, gönder butonuna basınız. </strong>
+                    <table class="table table-condensed table-striped table-responsive">
+                        <colgroup>
+                            <col class="col-xs-2 col-md-2" />
+                            <col class="col-xs-10 col-md-10" />
+                        </colgroup>
+                        <tbody id="instruction-table">
+                        </tbody>
+                    </table>
+                    <div class="text-center">
+                        <img src="https://s5.gifyu.com/images/tagging.gif" alt="tagging" width="50%"/>
+                    </div>
+                </div>
+            </div>
+            <div class="panel panel-primary"><a class="panel-heading" href="javascript:void(0);" id="originalTrigger"><strong>Orijinal Metin</strong> <span class="original-collapse-text">(Tıklayarak metni açıp kapatabilirsiniz.)</span> </a>
+                <div class="panel-body" id="originalBody"><table id="originalSentences"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2>Metindeki "<strong id="key-name" class="key-name">name</strong>" öğesini seçiniz.</h2>
+    <div id="raw">Cümle yüklenemedi. Sayfayı yenileyiniz.</div>
+
+    <div class="row" id="workContent">
+        <div class="col-xs-12 col-sm-8 content">
+            <div id="well" class="ann well"></div>
+        </div>
+        <div class="col-xs-12 col-sm-4 fields">
+            <div id="button-div">
+                <button type="button" id="undo" value="Undo" class="btn btn-primary">
+                    <span class="glyphicon glyphicon-backward"></span> Geri Al
+                </button>
+                <button type="button" id="remove" value="remove" class="btn btn-danger">
+                    <span class="glyphicon glyphicon-remove"></span> Seçimleri Sıfırla
+                </button>
+            </div>
+
+            <div class="btn-group-vertical" data-toggle="buttons" id="choice">
+            </div>
+
+        </div>
+
+    </div>
+    <div id="form" class="row"> </div>
+    <span title="Highlight all fields before submitting"><input id="submit" class="btn btn-default" data-key="Enter" type="submit" disabled=disabled /></span>
+    <input id="incorrect" value="Çeviri Hatalı!!!" class="btn btn-default" data-key="Enter" type="button" />
+</section>
+</html>
+<link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+
+<script>
+    // ---------------------------------------------------------
+    // Config
+    // ---------------------------------------------------------
+    var fieldName={"a":"a"}
+    var shortName={"a":"a"}
+    var longDesc = {"a":"a"}
+    var shortcutKey = {"a":"a"}
+    var annotations = {}
+    var tokens = [];
+    var old_choice = $("#choice").html();
+    var old_form = $("#form").html();
+
+    var token_sentence = "Cümle yüklenemedi!!!";
+</script>
+
+
+
+
+<script>
+
+
+    var annotator = function(){
+        // ---------------------------------------------------------
+// Global
+// ---------------------------------------------------------
+
+        var keys = Object.keys(fieldName);
+        var values = {};
+        var key;
+
+// ---------------------------------------------------------
+// Create jQuery elements
+// ---------------------------------------------------------
+
+        var raw = $('#raw');
+        var well = $('#well');
+        var submit = $('#submit');
+        var choice = $('#choice');
+        var keyname = $('#key-name');
+        var instructionTable = $('#instruction-table');
+
+        var form = $("#form");
+        var answer = {};
+        var tagHidden = {};
+        var noVal = {};
+        var radios = {};
+// answerHiddenDuplicates value of answer but is needed because
+// otherwise the data is not sent
+        var answerHidden = {};
+
+        var makeInstruction = function(key) {
+            return ($(
+                    '<tr>')
+                    .append($('<td>').text(fieldName[key]))
+                    .append($('<td>').text(longDesc[key]))
+            );
+        }
+
+        var makeChoice = function(key) {
+            var input = ($(
+                    '<input>')
+                    .attr({
+                        'name': 'choice', 'id': key + "-choice",
+                        'value': key, 'type': 'radio', 'data-key': shortcutKey[key]
+                    })
+                    .text(fieldName[key])
+            );
+            radios[key] = input;
+            var label = ($(
+                    '<label>')
+                    .addClass('btn btn-default')
+                    .text(fieldName[key])
+                    .append(input)
+                    .attr({'title': "Shortcut: " +  shortcutKey[key]})
+            );
+            return label;
+        }
+
+        var makeAnswerHidden = function(key) {
+            var input = ($(
+                    '<input>')
+                    .attr({'type': 'hidden', 'name': key, 'id': key + "-hidden"})
+            );
+            answerHidden[key] = input;
+            return input;
+        }
+
+        var makeTagHidden = function(key) {
+            var input = ($(
+                    '<input>')
+                    .attr({'type': 'hidden', 'name': key + "-tag", 'id': key + "-tag"})
+            );
+            tagHidden[key] = input;
+            return input;
+        }
+
+
+        var  makeFormRow = function(key) {
+            var checkbox = ($(
+                    '<input>')
+                    .attr({'type': 'checkbox', 'id': "no-" + key})
+                    .addClass('form-check-input')
+                    .change(function() { show(); })
+            );
+            var label = ($(
+                    '<label>')
+                    .attr({'for': "no-" + key})
+                    .addClass('form-check-label')
+                    .text(shortName[key]+" bulunmuyor.")
+            );
+
+            var input = ($(
+                    '<input>')
+                    .attr({'type': 'text', 'disabled':'disabled', 'id': key})
+                    .addClass('form-control')
+            );
+
+            var div = ($(
+                    '<div>')
+                    .addClass('col-xs-12 col-sm-12 content')
+                    .append($('<label>')
+                        .attr({'for': key})
+                        .text(fieldName[key])
+                    )
+                    .append($('<div>')
+                        .addClass('form-row')
+                        .append($('<div>')
+                            .addClass('col-sm-8')
+                            .append(input)
+                        )
+                        .append($('<div>')
+                            .addClass('col-sm-4')
+                            .append($('<div>')
+                                .addClass('form-check')
+                                .append(checkbox)
+                                .append(' ')
+                                .append(label)
+                            )
+                        )
+                    )
+            );
+            answer[key] = input;
+            noVal[key] = checkbox;
+            return div;
+        }
+
+
+        var makeDom = function() {
+            for (var key of keys) {
+                form.append(makeFormRow(key));
+                form.append(makeTagHidden(key));
+                form.append(makeAnswerHidden(key));
+                choice.append(makeChoice(key));
+                annotations[key] = [];
+                values[key] = "";
+                instructionTable.append(makeInstruction(key));
+            }
+        }
+
+// ---------------------------------------------------------
+// Annotation logic
+// ---------------------------------------------------------
+
+        var old_annotations = [];
+
+
+        var get_annotation_id = function(token_id, annotations) {
+            var found = annotations.findIndex(function(annotation) {
+                return token_id >= annotation[0] && token_id < annotation[1];
+            });
+            return found;
+        };
+
+        var mouse_down = function(id) {
+            var annotation_id = get_annotation_id(id, annotations[key]);
+            if (annotation_id > -1) {
+                delete_annotation(annotation_id);
+                show();
+            } else {
+                first_token = id;
+            }
+        };
+
+        var mouse_up = function(id) {
+            if (first_token > -1) {
+                if (first_token <= id) {
+                    add_annotation([first_token, id + 1]);
+                } else {
+                    add_annotation([id, first_token + 1]);
+                }
+                first_token = -1;
+                show();
+            }
+            clear_selection();
+        };
+
+        var clear_selection = function() {
+            if (document.selection) {
+                document.selection.empty();
+            } else if ( window.getSelection ) {
+                window.getSelection().removeAllRanges();
+            }
+        };
+
+        var get_value = function() {
+            var values = _.map(annotations[key], function(annotation) {
+                return tokens.slice(annotation[0], annotation[1]).join(" ");
+            });
+            return values.join(" ");
+        };
+
+        var remove_all_annotations = function() {
+            old_annotations = annotations[key].slice();
+            annotations[key] = []
+        };
+
+        var delete_annotation = function(annotation_id) {
+            if (annotation_id > -1) {
+                old_annotations = annotations[key].slice();
+                annotations[key].splice(annotation_id, 1);
+            }
+        }
+
+        var add_annotation = function(annotation) {
+            old_annotations = annotations[key].slice();
+            annotations[key].push(annotation);
+        }
+
+        var toggle_old_new = function() {
+            var new_annotations = annotations[key].slice();
+            annotations[key] = old_annotations.slice();
+            old_annotations = new_annotations;
+        }
+
+
+
+// ---------------------------------------------------------
+// Displaying
+// ---------------------------------------------------------
+
+        var sequence_html = function(sequence, annotations) {
+            var ret = _.map(sequence, function(token, index) {
+                return '<span class="token" id=tok_' + index + '> '
+                    + token + ' </span>';
+            });
+            _.each(annotations, function(annotation) {
+                ret[annotation[0]] = '<strong class="annotation">'
+                    + ret[annotation[0]];
+                ret[annotation[1]-1] = ret[annotation[1]-1] + '</strong>';
+            });
+
+            return ret.join(' ');
+        }
+
+
+
+        var canSubmit = function() {
+            for (var key of keys) {
+                if (values[key] == "" && !noVal[key].is(":checked")) { return false; }
+            }
+            return true;
+        }
+
+        var show = function() {
+            annotations[key].sort(function(a, b) {
+                return a[0] - b[0];
+            });
+            //fill_annotated_values(datum);
+            seq_html = sequence_html(tokens, annotations[key]);
+            well.html(seq_html);
+            values[key] = get_value();
+            answer[key].val(values[key]);
+            answerHidden[key].val(values[key]);
+            tagHidden[key].val(annotations[key]);
+            console.log(key);
+            console.log(annotations[key]);
+            keyname.html(shortName[key]);
+
+
+            // Handler on tokens
+            $(".token").mousedown(function() {
+                mouse_down(parseInt($(this).attr('id').split("_")[1]));
+            });
+            $(".token").mouseup(function() {
+                mouse_up(parseInt($(this).attr('id').split("_")[1]));
+            });
+
+            if (canSubmit()) {
+                submit.removeAttr("disabled");
+                submit.removeClass("btn-default");
+                submit.addClass("btn-success");
+            } else {
+                submit.attr("disabled", "disabled");
+                submit.removeClass("btn-success");
+                submit.addClass("btn-default");
+            }
+        };
+
+
+        makeDom();
+
+// ---------------------------------------------------------
+// Event handlers
+// ---------------------------------------------------------
+
+        $("#undo").click(function() {
+            toggle_old_new();
+            show();
+        });
+
+
+        $("#remove").click(function() {
+                remove_all_annotations();
+                show();
+            }
+        );
+
+//highlight selected category
+        var inputs = $("#choice input:radio");
+        inputs.change(function(){
+            inputs.parent().removeClass("btn-success");
+            inputs.parent().addClass("btn-default");
+            if($(this).is(":checked")){
+                key =  $(this).val();
+                $(this).parent().removeClass("btn-default");
+                $(this).parent().addClass("btn-success");
+                show();
+            }else{
+                $(this).parent().removeClass("btn-success");
+                $(this).parent().addClass("btn-default");
+            }
+        });
+
+// Instructions expand/collapse
+        var content = $('#instructionBody');
+        var trigger = $('#collapseTrigger');
+        content.hide();
+        $('.collapse-text').text('(Detayları açmak için tıklayınız.)');
+        trigger.click(function(){
+            content.toggle();
+            var isVisible = content.is(':visible');
+            if(isVisible){
+                $('.collapse-text').text('(Detayları kapatmak için tıklayınız.)');
+            }else{
+                $('.collapse-text').text('(Detayları açmak için tıklayınız.)');
+            }
+        });
+
+
+        var originalContent = $('#originalBody');
+        var originalTrigger = $('#originalTrigger');
+        originalContent.hide();
+        $('.original-collapse-text').text('(Metni açmak için tıklayınız.)');
+        originalTrigger.click(function(){
+            originalContent.toggle();
+            var isVisible = originalContent.is(':visible');
+            if(isVisible){
+                $('.original-collapse-text').text('(Metni kapatmak için tıklayınız.)');
+            }else{
+                $('.original-collapse-text').text('(Metni açmak için tıklayınız.)');
+            }
+        });
+// ---------------------------------------------------------
+// Initialize
+// ---------------------------------------------------------
+
+
+        key = keys[0];
+        radios[key].click();
+        tokens = token_sentence.split(" ");
+        raw.hide();
+        show();
+    }
+</script>
+
+<script type="text/javascript">
+    (function() {
+        // Your JavaScript code
+        pybossa.taskLoaded(function(task, deferred){
+            if ( !$.isEmptyObject(task) ) {
+
+                deferred.resolve(task);
+
+            }
+            else {
+                //deferred.resolve(task);
+            }
+        });
+
+        pybossa.presentTask(function(task, deferred){
+            var logsRaw = task.info.log.replace("[","");
+            logsRaw = logsRaw.replace("]","");
+            //logsRaw = logsRaw.replace("\"","");
+            logs = logsRaw.split("\', \'").join("/").split("\',\'").join("/").split("\", \"").join("/").split("\',\"").join("/").split("\",\'").join("/").split("\", \'").join("/").split("\', \"").join("/").split("/")
+
+            var logs_trRaw = task.info.log_tr.replace("[","");
+            logs_trRaw = logs_trRaw.replace("]","");
+            //logs_trRaw = logs_trRaw.replace("\"","");
+            logs_tr = logs_trRaw.split("\', \'").join("/").split("\',\'").join("/").split("\", \"").join("/").split("\',\"").join("/").split("\",\'").join("/").split("\", \'").join("/").split("\', \"").join("/").split("/")
+
+            var slotsRaw = task.info.slots.replace("[","");
+            slotsRaw = slotsRaw.replace("]","");
+            //logs_trRaw = logs_trRaw.replace("\"","");
+            slotsRaw = slotsRaw.replace("\'","")
+            slotsRaw = slotsRaw.substring(0, slotsRaw.length - 1);
+            slots = slotsRaw.split("\', \'").join("/").split("\',\'").join("/").split("\", \"").join("/").split("\',\"").join("/").split("\",\'").join("/").split("\", \'").join("/").split("\', \"").join("/").split("/")
+
+            var slotTypes = task.info.slot_types.replace("[","");
+            slotTypes = slotTypes.replace("]","");
+            slotTypes = slotTypes.replace("\'","")
+            slotTypes = slotTypes.substring(0, slotTypes.length - 1);
+            slot_types = slotTypes.split("\', \'").join("/").split("\',\'").join("/").split("\", \"").join("/").split("\',\"").join("/").split("\",\'").join("/").split("\", \'").join("/").split("\', \"").join("/").split("/")
+
+
+            fieldName={}
+            shortName={}
+            longDesc={}
+            shortcutKey={}
+            $("#choice").html(old_choice);
+            $("#form").html(old_form);
+
+            for (var i = 0; i < slots.length; i++){
+                fieldName[slots[i]] = slots[i];
+                shortName[slots[i]] = slots[i];
+                longDesc [slots[i]] = slot_types[i];
+                shortcutKey [slots[i]]= i;
+            }
+
+            originalTable = $("#originalSentences")
+            for(var i = 0 ; i <logs.length ; i++){
+                originalTable.append("<tr><td>"+logs[i]+"</td></tr>>")
+            }
+
+            token_sentence =logs_tr.join(" <br/><br/> ")
+            annotator();
+
+            if ( !$.isEmptyObject(task) ) {
+                var btn = $('#submit');
+                btn.click(function(){
+                    var val = true
+                    slot_annotation={}
+                    for(var i=0; i<slots.length; i++){
+                        slot_annotation[slots[i]] = ""
+                        for(var j=0; j<annotations[slots[i]].length; j++){
+                            slot_annotation[slots[i]] += tokens[annotations[slots[i]][j][0]];
+                            slot_annotation[slots[i]] += " "
+                        }
+                        slot_annotation[slots[i]] = slot_annotation[slots[i]].substring(0, slot_annotation[slots[i]].length - 1);
+                    }
+                    answerDict = {"id":task.info.id, "slots":slot_annotation, "validation":val}
+                    pybossa.saveTask(task.id, JSON.stringify(answerDict)).done(function() { //burada da verilen cevap(tıklanan butonun text value'su) cevap olarak answer kolonuna kaydediliyor.
+                        deferred.resolve();
+                    });
+
+                })
+
+                var btn = $('#incorrect');
+                btn.click(function(){
+                    var val = false
+
+                    answerDict = {"id":task.info.id, "slots":{}, "validation":val}
+                    pybossa.saveTask(task.id, JSON.stringify(answerDict)).done(function() { //burada da verilen cevap(tıklanan butonun text value'su) cevap olarak answer kolonuna kaydediliyor.
+                        deferred.resolve();
+                    });
+                })
+
+            }
+
+
+        });
+
+        pybossa.run('slottag');
+    })();
+</script>

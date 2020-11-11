@@ -1,0 +1,153 @@
+<div class="row">
+    <div class="col-md-12">
+        <h1>MultiWOZ Veri Kumesi Çevirisi</h1>
+        <h2>Konusma</h2>
+        <p>Aşağıda ChatBot-İnsan arasında gerçekleşen bir diyalog yer almaktadır. Amacımız chatbot eğitimlerinde kullanmak üzere bu diyaloglari Turkcelestirmektir. Lütfen cümlelerin anlam bütünlüğünü koruyarak (örneğin 3.p.m - > ogleden sonra saat 3 olarak çevrilmeli, saat bilgisini değiştirmeyiniz) çeviriyi yapiniz.  Kolaylik olması açısından orta kolonda otomatik bir çeviri sisteminin çıktısı verilmiştir. Lütfen birebir kopyalama yapmayınız.
+C ve İ etiketleri bilgi amaçlıdır, çeviride kullanmayınız.</p>
+        <table class="table">
+          <thead>
+          </thead>
+            <tbody id="log"></tbody>
+        </table>
+        <div id="answer">
+            <button class="btn btn-success btn-answer" value='gonder'><i class="icon icon-white icon-thumbs-up"></i> <span id="i18n_yes">Cevabi Gonder</span></button>
+            <button class="btn btn-answer" value='EminDegilim'><i class="icon icon-white icon-question-sign"></i> <span id="i18n_i_dont_know">Emin değilim</span></button>
+        </div>
+
+    </div>
+</div>
+<script type="text/javascript">
+  var goals = [];
+  var logs = [];
+(function() {
+  pybossa.taskLoaded(function(task, deferred){
+    if ( !$.isEmptyObject(task) ) {
+
+      deferred.resolve(task);
+
+      }
+    else {
+    //deferred.resolve(task);
+    }
+    });
+
+    pybossa.presentTask(function(task, deferred){
+        console.log("TaskLoaded Not Empty")
+
+        var logsRaw = task.info.log.replace("[","");
+        logsRaw = logsRaw.replace("]","");
+        //logsRaw = logsRaw.replace("\"","");
+        logs = logsRaw.split("\', \'").join("/").split("\',\'").join("/").split("\", \"").join("/").split("\',\"").join("/").split("\",\'").join("/").split("\", \'").join("/").split("\', \"").join("/").split("/")
+
+        var logs_trRaw = task.info.log_tr.replace("[","");
+        logs_trRaw = logs_trRaw.replace("]","");
+        //logs_trRaw = logs_trRaw.replace("\"","");
+        logs_tr = logs_trRaw.split("\', \'").join("/").split("\',\'").join("/").split("\", \"").join("/").split("\',\"").join("/").split("\",\'").join("/").split("\", \'").join("/").split("\', \"").join("/").split("/")
+
+
+        var table = document.getElementById("log");//define goal table
+
+        if (table != null) {
+          table.innerHTML = "";
+          var trH = document.createElement("tr");
+          var th = null;
+
+          th = document.createElement("th");        //-----
+          th.appendChild(document.createTextNode("Konusma Cumlesi"));
+          trH.appendChild(th);
+          th = document.createElement("th");
+          th.appendChild(document.createTextNode("Otomatik Ceviri"));
+          trH.appendChild(th);
+          th = document.createElement("th");
+          th.appendChild(document.createTextNode("Cevirisi"));
+          trH.appendChild(th);
+          table.appendChild(trH);                   //--------basliklarin duzenlenmesi
+
+          for (var i = 0; i < logs.length; i++) {
+            var log = logs[i];
+            var log_tr = logs_tr[i]
+            var tr = document.createElement("tr");
+            var td = null;
+
+
+            td = document.createElement("td");
+            var myDiv = document.createElement("div");
+            myDiv.id = 'myDiv';
+            var speaker=""
+            if(i%2){speaker = "C: "}
+            else{speaker = "İ: "}
+            myDiv.innerHTML = speaker+log;
+            td.appendChild(myDiv);
+            tr.appendChild(td);
+
+            td = document.createElement("td");
+            var myDiv = document.createElement("div");
+            myDiv.id = 'myDiv';
+            var speaker=""
+            if(i%2){speaker = "C: "}
+            else{speaker = "İ: "}
+            myDiv.innerHTML = speaker+log_tr;
+            td.appendChild(myDiv);
+            tr.appendChild(td);
+
+            td = document.createElement("td");
+            myDiv = document.createElement("textarea");
+            myDiv.rows="2";
+            myDiv.cols="60";
+            myDiv.id = "log_"+i.toString(10);
+
+            td.appendChild(myDiv);
+            tr.appendChild(td);
+
+            table.appendChild(tr);
+          }
+        }
+
+
+
+
+
+
+
+      if ( !$.isEmptyObject(task) ) {
+          $(".btn-answer").off('click').on('click', function() {
+          var btn = $(this);
+          var answer = btn.attr("value");
+              if(typeof answer != "undefined") {
+                if (answer == "gonder"){
+                    log_values = [];
+
+                    for(var i =0; i < logs.length ; i++){
+                      log_values.push($("#log_".concat(i.toString(10))).val());
+                    }
+                    answerDict = {"id":task.info.id, "log":log_values}
+                    console.log(log_values);
+                    pybossa.saveTask(task.id, JSON.stringify(answerDict)).done(function() { //burada da verilen cevap(tıklanan butonun text value'su) cevap olarak answer kolonuna kaydediliyor.
+                    deferred.resolve();
+                    });
+                  }
+                else{
+                  answerDict = {}
+                  pybossa.saveTask(task.id, JSON.stringify(answerDict)).done(function() { //EminDegilim
+                  console.log(answerDict)
+                  deferred.resolve();
+                  });
+
+                }
+              }
+              else{
+                  pybossaNotify("Oops... Bir şeyler yanlış gitti.", true, "error");
+                  }
+          });
+      pybossaNotify("Sıradaki cümle yükleniyor...", false, "loading");
+      }
+      else {
+          $(".skeleton").hide();
+          pybossaNotify("Tebrikler! Bütün taskları tamamladınız.", true, "info");
+      }
+
+    });
+
+    pybossa.run('multiwoz');
+})();
+</script>
